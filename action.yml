@@ -1,36 +1,33 @@
-name: GitHub Action Name
-description: A GitHub Action Descriptionto Open a specified GitHub issue using the GitHub API
+name: Deploy NuGet Package
+description: Deploy NuGet Package to NuGet URL
 author: Lee Lott
 
 inputs:
-  input-1:
-    description: 'Description of input'
+  nuget-file-path:
+    description: 'The full path to the NuGet package to deploy'
     required: true
-  input-2:
-    description: 'Description of input'
+  nuget-url:
+    description: 'The URL to the GitHub NuGet packages'
     required: true
-  input-3:
-    description: 'Description of input'
+  nuget-package-name:
+    description: 'The name of the NuGet package to use for this release'
     required: true
-
-outputs:
-  result:
-    description: 'Result of the action ("success" or "failure")'
-    value: ${{ steps.action.outputs.result }}
-  error-message:
-    description: 'Error message if the action fails'
-    value: ${{ steps.action.outputs.error-message }}
+  nuget-package-version:
+    description: 'The version number of the NuGet package to use for this release.'
+    required: true    
+  token:
+    description: 'The GitHub token used for authentication to upload the NuGet package'
+    required: true
 
 runs:
-  using: composite
+  using: "composite"
   steps:
-    - name: Action Name
-      id: action
+    - name: Create Release
       shell: pwsh
-      run: |        
-        . "${{ github.action_path }}/action.ps1"
-        run_action `
-          -Input1 "${{ inputs.input-1 }}" `
-          -Input2 "${{ inputs.input-2 }}" `
-          -Inpute3 "${{ inputs.input-3 }}" `
-      
+      run: dotnet nuget push ${{ inputs.nuget-file-path }} --api-key ${{ inputs.token }} --source ${{ inputs.nuget-url }} --skip-duplicate        
+
+    - name: Add to Job Summary
+      shell: pwsh
+      run: |
+        "# NuGet Package Deployment Summary" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+        "Published NuGet package **${{ inputs.nuget-package-name }}.${{ inputs.nuget-package-version }}** to NuGet URL **${{ inputs.nuget-url }}**." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
