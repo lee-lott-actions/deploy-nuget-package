@@ -1,54 +1,66 @@
-# GitHub Action
+# Deploy NuGet Package Action
 
-Description of what the GitHub Action does.
+This GitHub Action automates the deployment of a NuGet package to a specified NuGet URL (such as GitHub Packages or nuget.org). It pushes a `.nupkg` artifact directly from your workflow, ideal for publishing .NET libraries or internal packages as part of your CI/CD process.
+
+---
 
 ## Features
-- Feature #1
-- Feature #2
-- Feature #3
+
+- Deploys a NuGet package (`.nupkg`) to a specified NuGet feed using `dotnet nuget push`.
+- Supports authentication using a token.
+- Skips uploading if the package version already exists (`--skip-duplicate`).
+- Adds deployment details to the GitHub job summary.
+
+---
 
 ## Inputs
-| Name          | Description                                           | Required | Default |
-|---------------|-------------------------------------------------------|----------|---------|
-| `input-1`     | Description of input-1.                               | Yes      | N/A     |
-| `input-2`     | Description of input-2.                               | Yes      | N/A     |
-| `input-3`     | Description of input-3.                               | Yes      | N/A    |
 
-## Outputs
-| Name           | Description                                                   |
-|----------------|---------------------------------------------------------------|
-| `result`       | Result of the action ("success" or "failure").                |
-| `error-message`| Error message if the action fails.                            |
+| Name                   | Description                                                      | Required |
+|------------------------|------------------------------------------------------------------|----------|
+| `nuget-file-path`      | Full path to the NuGet package to deploy.                        | Yes      |
+| `nuget-url`            | URL of the NuGet feed (e.g., GitHub Packages, nuget.org).        | Yes      |
+| `nuget-package-name`   | Name of the NuGet package for this release.                      | Yes      |
+| `nuget-package-version`| Version number of the NuGet package for this release.            | Yes      |
+| `token`                | GitHub token for authentication to upload the package.           | Yes      |
+
+---
 
 ## Usage
-1. **Add the Action to Your Workflow**:
-   Create or update a workflow file (e.g., `.github/workflows/your-action.yml`) in your repository.
 
-2. **Reference the Action**:
-   Use the action by referencing the repository and version (e.g., `v1`).
+Add this action as a step after your build, pack, or release process.
 
-3. **Example Workflow**:
-   ```yaml
-   name: Your Action
-   on:
-     issues:
-       types: [labeled]
-   jobs:
-     open-issue:
-       runs-on: ubuntu-latest
-       steps:
-         - name: Run Action
-           id: open
-           uses: lee-lott-actions/your-action@v1
-           with:
-             input-1: '1'
-             input-2: '2'
-             input-3: '3'
-         - name: Print Result
-           run: |
-             if [[ "${{ steps.open.outputs.result }}" == "success" ]]; then
-               echo "Issue #${{ github.event.issue.number }} successfully opened."
-             else
-               echo "Error: ${{ steps.open.outputs.error-message }}"
-               exit 1
-             fi
+### Example Workflow
+
+```yaml
+name: Deploy NuGet Package
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy-nuget:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      
+      - name: Deploy NuGet Package
+        uses: lee-lott-actions/deploy-nuget-package@v1
+        with:
+          nuget-file-path: 'src/bin/Release/MyLib.1.0.0.nupkg'
+          nuget-url: 'https://nuget.pkg.github.com/your-org/index.json'
+          nuget-package-name: 'MyLib'
+          nuget-package-version: '1.0.0'
+          token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+---
+
+## Notes
+
+- The action uses [`dotnet nuget push`](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-nuget-push) and requires the `.nupkg` file path to be correct and available on the runner.
+- The provided token should have `write:packages` or equivalent permission for GitHub Packages or the relevant NuGet feed.
+- The action does **not** fail on duplicate version uploads; it will just continue if the package version has already been published (`--skip-duplicate`).
+
+---
