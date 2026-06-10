@@ -14,7 +14,19 @@ inputs:
     required: true
   nuget-package-version:
     description: 'The version number of the NuGet package to use for this release.'
-    required: true    
+    required: true
+  version-tag:
+    description: 'The version tag of the NuGet package (contains the "v" prefix)'
+    requried: true
+  deployment-environment:
+    description: 'The name of the environment for the GitHub deployment'
+    required: true
+  org-name:
+    description: 'The name of the GitHub organization'
+    required: true
+  repo-name:
+    description: 'The name of the repository'
+    required: true
   token:
     description: 'The GitHub token used for authentication to upload the NuGet package'
     required: true
@@ -22,10 +34,44 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Create Release
-      shell: pwsh
-      run: dotnet nuget push ${{ inputs.nuget-file-path }} --api-key ${{ inputs.token }} --source ${{ inputs.nuget-url }} --skip-duplicate        
+    - name: Create Deployment
+      id: create-deployment
+      uses: lee-lott-actions/create-github-deployment@v1
+      with:
+        ref: ${{ inputs.version-tag }}
+        environment: ${{ inputs.deployment-environment }}
+        description: 'Queuing deployment.'
+        org-name: ${{ inputs.org-name }}
+        repo-name: ${{ inputs.repo-name }}
+        token: ${{ inputs.token }}
 
+    - name: Update Deployment
+      id: update-deployment-in-progress
+      uses: lee-lott-actions/update-github-deployment@v1
+      with:
+        deployment-id: ${{ steps.create-deployment.outputs.deployment-id }}
+        state: 'in_progress'
+        description: 'Beginnging deployment...'
+        org-name: ${{ inputs.org-name }}
+        repo-name: ${{ inputs.repo-name }}
+        token: ${{ inputs.token }}
+        
+    - name: Create Release
+      id: create-nuget-release
+      shell: pwsh
+      run: dotnet nuget push ${{ inputs.nuget-file-path }} --api-key ${{ inputs.token }} --source ${{ inputs.nuget-url }} --skip-duplicate
+
+    - name: Update Deployment
+      id: update-deployment-success-or-failure
+      uses: lee-lott-actions/update-github-deployment@v1
+      with:
+        deployment-id: ${{ steps.create-deployment.outputs.deployment-id }}
+        state: ${{ steps.create-nuget-release.outcome == 'success' && 'success' || 'failure' }}
+        description: ${{ steps.create-nuget-release.outcome == 'success' && 'Deployment Successful' || 'Deployment Failed' }}
+        org-name: ${{ inputs.org-name }}
+        repo-name: ${{ inputs.repo-name }}
+        token: ${{ inputs.token }}    
+        
     - name: Add to Job Summary
       shell: pwsh
       run: |
