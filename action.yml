@@ -51,7 +51,7 @@ runs:
       with:
         deployment-id: ${{ steps.create-deployment.outputs.deployment-id }}
         state: 'in_progress'
-        description: 'Beginnging deployment...'
+        description: 'Beginning deployment...'
         org-name: ${{ inputs.org-name }}
         repo-name: ${{ inputs.repo-name }}
         token: ${{ inputs.token }}
