@@ -21,6 +21,10 @@ This GitHub Action automates the deployment of a NuGet package to a specified Nu
 | `nuget-url`            | URL of the NuGet feed (e.g., GitHub Packages, nuget.org).        | Yes      |
 | `nuget-package-name`   | Name of the NuGet package for this release.                      | Yes      |
 | `nuget-package-version`| Version number of the NuGet package for this release.            | Yes      |
+| `version-tag`          | The version tag of the NuGet package (contains the "v" prefix)   | Yes      |
+| `deployment-environment` | The name of the environment for the GitHub deployment          | Yes      |
+| `org-name`             | The name of the GitHub organization.                             | Yes      |
+| `repo-name`            | The name of the repository.                                      | Yes      |
 | `token`                | GitHub token for authentication to upload the package.           | Yes      |
 
 ---
@@ -46,12 +50,16 @@ jobs:
         uses: actions/checkout@v6
       
       - name: Deploy NuGet Package
-        uses: lee-lott-actions/deploy-nuget-package@v1
+        uses: lee-lott-actions/deploy-nuget-package@v2
         with:
           nuget-file-path: 'src/bin/Release/MyLib.1.0.0.nupkg'
           nuget-url: 'https://nuget.pkg.github.com/your-org/index.json'
           nuget-package-name: 'MyLib'
           nuget-package-version: '1.0.0'
+          version-tag: 'v1.0.0'
+          deployment-environment: 'Production'
+          org-name: 'your-org'
+          repo-name: 'your-repo'
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
