@@ -50,7 +50,7 @@ jobs:
         uses: actions/checkout@v6
       
       - name: Deploy NuGet Package
-        uses: lee-lott-actions/deploy-nuget-package@v1
+        uses: lee-lott-actions/deploy-nuget-package@v2
         with:
           nuget-file-path: 'src/bin/Release/MyLib.1.0.0.nupkg'
           nuget-url: 'https://nuget.pkg.github.com/your-org/index.json'
